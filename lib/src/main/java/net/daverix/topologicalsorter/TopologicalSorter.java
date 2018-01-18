@@ -1,0 +1,96 @@
+/*
+   Copyright 2018 David Laurell
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ */
+package net.daverix.topologicalsorter;
+
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+/**
+ * <p>This class sorts nodes in an acyclic directed graph using a depth first algorithm which can be
+ * found at <a href="https://en.wikipedia.org/wiki/Topological_sorting">Wikipedia</a></p>
+ */
+public final class TopologicalSorter {
+    /**
+     * Returns a sorted list of nodes from an acyclic directed graph by using an edges factory to
+     * get the edges for each node.
+     *
+     * @param nodes the list of nodes to sort.
+     * @param edgesFactory the factory for getting nodes that are edges on another node
+     * @param <T> the type of the node
+     *
+     * @return a sorted list of nodes
+     */
+    public static <T> void sort(List<T> nodes, EdgesFactory<T> edgesFactory) {
+        if(nodes == null)
+            throw new IllegalArgumentException("nodes is null");
+
+        if(edgesFactory == null)
+            throw new IllegalArgumentException("edgesFactory is null");
+
+        final List<T> sorted = new ArrayList<>();
+        final List<T> unmarked = new ArrayList<>(nodes);
+        final List<T> temporaryMarked = new ArrayList<>();
+
+        while(!unmarked.isEmpty()) {
+            visit(unmarked.get(0), sorted, unmarked, temporaryMarked, nodes, edgesFactory);
+        }
+
+        nodes.clear();
+        nodes.addAll(sorted);
+    }
+
+    private static <T> void visit(T node,
+                                  List<T> sorted,
+                                  List<T> unmarked,
+                                  List<T> temporaryMarked,
+                                  List<T> all,
+                                  EdgesFactory<T> edgesFactory) {
+        if(temporaryMarked.contains(node))
+            return;
+
+        if(unmarked.contains(node)) {
+            temporaryMarked.add(node);
+
+            Collection<T> edgeNodes = edgesFactory.getEdges(node, all);
+            if(edgeNodes == null)
+                throw new IllegalStateException("provided edgeFactory returned null");
+            
+            for(T edgeNode : edgeNodes) {
+                visit(edgeNode, sorted, unmarked, temporaryMarked, all, edgesFactory);
+            }
+
+            unmarked.remove(node);
+            temporaryMarked.remove(node);
+            sorted.add(node);
+        }
+    }
+
+    public interface EdgesFactory<T> {
+        /**
+         * Returns nodes that are edges on the specified node.
+         *
+         * @param node the node to get edges from
+         * @param allNodes the nodes to use to get the edges
+         *
+         * @return a list of nodes that are edges to the specified node
+         */
+        Collection<T> getEdges(T node, List<T> allNodes);
+    }
+
+    private TopologicalSorter(){}
+}
