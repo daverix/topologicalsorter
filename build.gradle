@@ -12,6 +12,9 @@ buildscript {
 }
 
 allprojects {
+    group = 'net.daverix.topologicalsorter'
+    version = '0.1'
+
     repositories {
         google()
         jcenter()

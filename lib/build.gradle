@@ -1,4 +1,5 @@
 apply plugin: 'java'
+apply plugin: 'maven-publish'
 
 dependencies {
     testCompile "junit:junit:4.12"
@@ -7,4 +8,31 @@ dependencies {
 
 compileJava {
     sourceCompatibility = '1.8'
+}
+
+task sourceJar(type: Jar, dependsOn: 'classes') {
+    from sourceSets.main.allSource
+    classifier = 'sources'
+}
+
+task javadocJar(type: Jar, dependsOn: 'javadoc') {
+    from javadoc.destinationDir
+    classifier = 'javadoc'
+}
+
+publishing {
+    publications {
+        lib(MavenPublication) {
+            from components.java
+
+            artifactId 'topologicalsorter'
+
+            artifact sourceJar
+            artifact javadocJar
+
+            pom.withXml {
+                asNode().appendNode('description', 'A node sorting library using depth search')
+            }
+        }
+    }
 }
