@@ -42,39 +42,53 @@ public final class TopologicalSorter {
         if(edgesFactory == null)
             throw new IllegalArgumentException("edgesFactory is null");
 
-        final List<T> sorted = new ArrayList<>();
-        final List<T> unmarked = new ArrayList<>(nodes);
-        final List<T> temporaryMarked = new ArrayList<>();
-
-        while(!unmarked.isEmpty()) {
-            visit(unmarked.get(0), sorted, unmarked, temporaryMarked, nodes, edgesFactory);
-        }
+        Sorter<T> sorter = new Sorter<>(nodes, edgesFactory);
+        List<T> sorted = sorter.sort();
 
         nodes.clear();
         nodes.addAll(sorted);
     }
 
-    private static <T> void visit(T node,
-                                  List<T> sorted,
-                                  List<T> unmarked,
-                                  List<T> temporaryMarked,
-                                  List<T> all,
-                                  EdgesFactory<T> edgesFactory) {
-        if(sorted.contains(node))
-            return;
+    private static class Sorter<T> {
+        private final List<T> allNodes;
+        private final List<T> sorted;
+        private final List<T> unmarked;
+        private final List<T> temporaryMarked;
 
-        if(temporaryMarked.contains(node))
-            throw new IllegalStateException("cyclic dependency detected, " + node + " already visited");
-        
-        if(unmarked.contains(node)) {
+        private final EdgesFactory<T> edgesFactory;
+
+        private Sorter(List<T> nodes, EdgesFactory<T> edgesFactory) {
+            this.allNodes = new ArrayList<>(nodes);
+            this.sorted = new ArrayList<>(nodes.size());
+            this.unmarked = new ArrayList<>(nodes);
+            this.temporaryMarked = new ArrayList<>();
+
+            this.edgesFactory = edgesFactory;
+        }
+
+        public List<T> sort() {
+            while(!unmarked.isEmpty()) {
+                visit(unmarked.get(0));
+            }
+
+            return sorted;
+        }
+
+        private void visit(T node) {
+            if(sorted.contains(node))
+                return;
+
+            if(temporaryMarked.contains(node))
+                throw new IllegalStateException("cyclic dependency detected, " + node + " already visited");
+
             temporaryMarked.add(node);
 
-            Collection<T> edgeNodes = edgesFactory.getEdges(node, all);
+            Collection<T> edgeNodes = edgesFactory.getEdges(node, allNodes);
             if(edgeNodes == null)
                 throw new IllegalStateException("provided edgeFactory returned null");
-            
+
             for(T edgeNode : edgeNodes) {
-                visit(edgeNode, sorted, unmarked, temporaryMarked, all, edgesFactory);
+                visit(edgeNode);
             }
 
             unmarked.remove(node);
