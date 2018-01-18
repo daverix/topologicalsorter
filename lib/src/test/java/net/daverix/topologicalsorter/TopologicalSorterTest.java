@@ -30,6 +30,28 @@ import static java.util.stream.Collectors.toList;
 import static net.daverix.topologicalsorter.PlacementSubject.assertThat;
 
 public class TopologicalSorterTest {
+    @Test
+    public void sortSimpleGraph() {
+        A a = new A();
+        B b = new B();
+        C c = new C();
+        D d = new D();
+        E e = new E();
+
+        List<MyService> services = new ArrayList<>(asList(a, b, c, d, e));
+
+        TopologicalSorter.sort(services, new MySorter());
+
+        Truth.assertThat(services)
+                .named("should have all nodes in list after sort")
+                .containsExactly(a, b, c, d, e);
+
+        assertThat(services).hasItem(b).placedAfter(a);
+        assertThat(services).hasItem(c).placedBefore(a);
+        assertThat(services).hasItem(e).placedAfter(c);
+        assertThat(services).hasItem(e).placedBefore(a);
+    }
+
     interface MyService {
 
     }
@@ -109,27 +131,5 @@ public class TopologicalSorterTest {
 
             return edges;
         }
-    }
-
-    @Test
-    public void sortSimpleGraph() {
-        A a = new A();
-        B b = new B();
-        C c = new C();
-        D d = new D();
-        E e = new E();
-
-        List<MyService> services = new ArrayList<>(asList(a, b, c, d, e));
-
-        TopologicalSorter.sort(services, new MySorter());
-
-        Truth.assertThat(services)
-                .named("should have all nodes in list after sort")
-                .containsExactly(a, b, c, d, e);
-
-        assertThat(services).hasItem(b).placedAfter(a);
-        assertThat(services).hasItem(c).placedBefore(a);
-        assertThat(services).hasItem(e).placedAfter(c);
-        assertThat(services).hasItem(e).placedBefore(a);
     }
 }
