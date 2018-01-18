@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static java.util.Collections.unmodifiableCollection;
+
 /**
  * <p>This class sorts nodes in an acyclic directed graph using a depth first algorithm which can be
  * found at <a href="https://en.wikipedia.org/wiki/Topological_sorting">Wikipedia</a></p>
@@ -35,7 +37,7 @@ public final class TopologicalSorter {
      *
      * @return a sorted list of nodes
      */
-    public static <T> void sort(List<T> nodes, EdgesFactory<T> edgesFactory) {
+    public static <T> List<T> sort(Collection<T> nodes, EdgesFactory<T> edgesFactory) {
         if(nodes == null)
             throw new IllegalArgumentException("nodes is null");
 
@@ -43,22 +45,19 @@ public final class TopologicalSorter {
             throw new IllegalArgumentException("edgesFactory is null");
 
         Sorter<T> sorter = new Sorter<>(nodes, edgesFactory);
-        List<T> sorted = sorter.sort();
-
-        nodes.clear();
-        nodes.addAll(sorted);
+        return sorter.sort();
     }
 
     private static class Sorter<T> {
-        private final List<T> allNodes;
+        private final Collection<T> allNodes;
         private final List<T> sorted;
         private final List<T> unmarked;
         private final List<T> temporaryMarked;
 
         private final EdgesFactory<T> edgesFactory;
 
-        private Sorter(List<T> nodes, EdgesFactory<T> edgesFactory) {
-            this.allNodes = new ArrayList<>(nodes);
+        private Sorter(Collection<T> nodes, EdgesFactory<T> edgesFactory) {
+            this.allNodes = unmodifiableCollection(nodes);
             this.sorted = new ArrayList<>(nodes.size());
             this.unmarked = new ArrayList<>(nodes);
             this.temporaryMarked = new ArrayList<>();
@@ -66,7 +65,7 @@ public final class TopologicalSorter {
             this.edgesFactory = edgesFactory;
         }
 
-        public List<T> sort() {
+        List<T> sort() {
             while(!unmarked.isEmpty()) {
                 visit(unmarked.get(0));
             }
@@ -106,7 +105,7 @@ public final class TopologicalSorter {
          *
          * @return a list of nodes that are edges to the specified node
          */
-        Collection<T> getEdges(T node, List<T> allNodes);
+        Collection<T> getEdges(T node, Collection<T> allNodes);
     }
 
     private TopologicalSorter(){}

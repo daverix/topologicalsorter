@@ -39,18 +39,18 @@ public class TopologicalSorterTest {
         D d = new D();
         E e = new E();
 
-        List<MyService> services = new ArrayList<>(asList(a, b, c, d, e));
+        List<MyService> unsorted = new ArrayList<>(asList(a, b, c, d, e));
 
-        TopologicalSorter.sort(services, new MySorter());
+        List<MyService> sorted = TopologicalSorter.sort(unsorted, new MySorter());
 
-        Truth.assertThat(services)
+        Truth.assertThat(sorted)
                 .named("should have all nodes in list after sort")
                 .containsExactly(a, b, c, d, e);
 
-        assertThat(services).hasItem(b).placedAfter(a);
-        assertThat(services).hasItem(c).placedBefore(a);
-        assertThat(services).hasItem(e).placedAfter(c);
-        assertThat(services).hasItem(e).placedBefore(a);
+        assertThat(sorted).hasItem(b).placedAfter(a);
+        assertThat(sorted).hasItem(c).placedBefore(a);
+        assertThat(sorted).hasItem(e).placedAfter(c);
+        assertThat(sorted).hasItem(e).placedBefore(a);
     }
 
     @Test
@@ -141,7 +141,7 @@ public class TopologicalSorterTest {
 
     class MySorter implements TopologicalSorter.EdgesFactory<MyService> {
         @Override
-        public Collection<MyService> getEdges(MyService node, List<MyService> allNodes) {
+        public Collection<MyService> getEdges(MyService node, Collection<MyService> allNodes) {
             Class<? extends MyService> nodeClass = node.getClass();
 
             List<MyService> edges = allNodes.stream()

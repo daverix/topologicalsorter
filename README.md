@@ -19,11 +19,11 @@ graphs found on [Wikipedia](https://en.wikipedia.org/wiki/Topological_sorting#De
 
 ## Usage
 
-    List<MyNode> nodes = ...
+    List<MyNode> unsorted = ...
         
-    TopologicalSorter.sort(nodes, new TopologicalSorter.EdgesFactory<MyNode>() {
+    List<MyNode> sorted = TopologicalSorter.sort(unsorted, new TopologicalSorter.EdgesFactory<MyNode>() {
         @Override
-        public Collection<MyNode> getEdges(MyNode currentNode, List<MyNode> allNodes) {
+        public Collection<MyNode> getEdges(MyNode currentNode, Collection<MyNode> allNodes) {
             List<MyNode> edges = new ArrayList<>();
           
             // filter out the nodes connecting currentNode by going through all nodes in allNodes
