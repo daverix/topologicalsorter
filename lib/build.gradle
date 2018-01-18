@@ -1,4 +1,8 @@
-apply plugin: 'java'
+plugins {
+    id "com.jfrog.bintray" version "1.7.3"
+}
+
+apply plugin: 'java-library'
 apply plugin: 'maven-publish'
 
 dependencies {
@@ -33,6 +37,24 @@ publishing {
             pom.withXml {
                 asNode().appendNode('description', 'A node sorting library using depth search')
             }
+        }
+    }
+}
+
+bintray {
+    user = bintrayUser
+    key = bintrayApikey
+    publications = ['lib']
+    pkg {
+        repo = 'maven'
+        name = 'topologicalsorter'
+        licenses = ['Apache-2.0']
+        vcsUrl = 'https://github.com/daverix/topologicalsorter.git'
+
+        version {
+            name = project.version
+            desc = 'Topological sorter based on a depth first search algorithm'
+            vcsTag = "v$project.version"
         }
     }
 }
