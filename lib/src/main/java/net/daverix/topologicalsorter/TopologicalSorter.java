@@ -60,9 +60,12 @@ public final class TopologicalSorter {
                                   List<T> temporaryMarked,
                                   List<T> all,
                                   EdgesFactory<T> edgesFactory) {
-        if(temporaryMarked.contains(node))
+        if(sorted.contains(node))
             return;
 
+        if(temporaryMarked.contains(node))
+            throw new IllegalStateException("cyclic dependency detected, " + node + " already visited");
+        
         if(unmarked.contains(node)) {
             temporaryMarked.add(node);
 

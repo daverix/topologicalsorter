@@ -28,6 +28,7 @@ import java.util.List;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static net.daverix.topologicalsorter.PlacementSubject.assertThat;
+import static org.junit.Assert.fail;
 
 public class TopologicalSorterTest {
     @Test
@@ -50,6 +51,39 @@ public class TopologicalSorterTest {
         assertThat(services).hasItem(c).placedBefore(a);
         assertThat(services).hasItem(e).placedAfter(c);
         assertThat(services).hasItem(e).placedBefore(a);
+    }
+
+    @Test
+    public void detectCycles() {
+        Dependency a = new Dependency("a");
+        Dependency b = new Dependency("b");
+        List<Dependency> dependencies = new ArrayList<>();
+        dependencies.add(a);
+        dependencies.add(b);
+
+        a.dependencies.add(b);
+        b.dependencies.add(a);
+
+        try {
+            TopologicalSorter.sort(dependencies, (node, allNodes) -> node.dependencies);
+            fail("method should throw exception about cyclic dependencies detected");
+        } catch (IllegalStateException e) {
+            Truth.assertThat(e).hasMessageThat().contains("cyclic dependency detected");
+        }
+    }
+
+    static class Dependency {
+        private final String name;
+        private final List<Dependency> dependencies = new ArrayList<>();
+
+        Dependency(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
     }
 
     interface MyService {
@@ -96,7 +130,8 @@ public class TopologicalSorterTest {
         }
     }
 
-    @After(C.class) @Before(A.class)
+    @After(C.class)
+    @Before(A.class)
     class E implements MyService {
         @Override
         public String toString() {
@@ -122,7 +157,7 @@ public class TopologicalSorterTest {
                     }).collect(toList());
 
             After after = nodeClass.getAnnotation(After.class);
-            if(after != null) {
+            if (after != null) {
                 List<Class<?>> classesAfter = asList(after.value());
                 edges.addAll(allNodes.stream()
                         .filter(other -> classesAfter.contains(other.getClass()))
