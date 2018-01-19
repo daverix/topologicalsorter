@@ -21,22 +21,19 @@ import org.junit.Test;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static net.daverix.topologicalsorter.PlacementSubject.assertThat;
 import static org.junit.Assert.fail;
 
 public class TopologicalSorterTest {
     @Test
-    public void sortSimpleGraph() {
+    public void sortCustomGraph() {
         A a = new A();
         B b = new B();
         C c = new C();
@@ -45,7 +42,7 @@ public class TopologicalSorterTest {
 
         List<MyService> unsorted = asList(a, b, c, d, e);
 
-        List<MyService> sorted = TopologicalSorter.sort(unsorted, new MySorter());
+        List<MyService> sorted = TopologicalSorter.sort(new CustomGraph(unsorted));
 
         Truth.assertThat(sorted)
                 .named("should have all nodes in list after sort")
@@ -58,7 +55,7 @@ public class TopologicalSorterTest {
     }
 
     @Test
-    public void sortSimpleGraphUsingMap() {
+    public void sortSimpleGraphUsingDirectedGraph() {
         A a = new A();
         B b = new B();
         C c = new C();
@@ -66,37 +63,11 @@ public class TopologicalSorterTest {
         E e = new E();
 
         List<MyService> unsorted = asList(a, b, c, d, e);
-
-        Map<MyService, Set<MyService>> edges = new HashMap<>();
+        MutableGraph<MyService> graph = new DirectedGraph<>();
         for(MyService node : unsorted) {
-            edges.put(node, new HashSet<>(getMyServiceEdges(node, unsorted)));
+            graph.add(node, getMyServiceEdges(node, unsorted));
         }
-        List<MyService> sorted = TopologicalSorter.sort(unsorted, edges);
-
-        Truth.assertThat(sorted)
-                .named("should have all nodes in list after sort")
-                .containsExactly(a, b, c, d, e);
-
-        assertThat(sorted).hasItem(b).placedAfter(a);
-        assertThat(sorted).hasItem(c).placedBefore(a);
-        assertThat(sorted).hasItem(e).placedAfter(c);
-        assertThat(sorted).hasItem(e).placedBefore(a);
-    }
-
-    @Test
-    public void sortSimpleGraphUsingOnlyMap() {
-        A a = new A();
-        B b = new B();
-        C c = new C();
-        D d = new D();
-        E e = new E();
-
-        List<MyService> unsorted = asList(a, b, c, d, e);
-        Map<MyService, Set<MyService>> nodes = new HashMap<>();
-        for(MyService node : unsorted) {
-            nodes.put(node, new HashSet<>(getMyServiceEdges(node, unsorted)));
-        }
-        List<MyService> sorted = TopologicalSorter.sort(nodes);
+        List<MyService> sorted = TopologicalSorter.sort(graph);
 
         Truth.assertThat(sorted)
                 .named("should have all nodes in list after sort")
@@ -112,15 +83,13 @@ public class TopologicalSorterTest {
     public void detectCycles() {
         Dependency a = new Dependency("a");
         Dependency b = new Dependency("b");
-        List<Dependency> dependencies = new ArrayList<>();
-        dependencies.add(a);
-        dependencies.add(b);
 
-        a.dependencies.add(b);
-        b.dependencies.add(a);
+        MutableGraph<Dependency> dependencies = new DirectedGraph<>();
+        dependencies.add(a, b);
+        dependencies.add(b, a);
 
         try {
-            TopologicalSorter.sort(dependencies, (node, allNodes) -> node.dependencies);
+            TopologicalSorter.sort(dependencies);
             fail("method should throw exception about cyclic dependencies detected");
         } catch (IllegalStateException e) {
             Truth.assertThat(e).hasMessageThat().contains("cyclic dependency detected");
@@ -129,7 +98,6 @@ public class TopologicalSorterTest {
 
     static class Dependency {
         private final String name;
-        private final List<Dependency> dependencies = new ArrayList<>();
 
         Dependency(String name) {
             this.name = name;
@@ -194,17 +162,28 @@ public class TopologicalSorterTest {
         }
     }
 
-    class MySorter implements TopologicalSorter.EdgesFactory<MyService> {
+    class CustomGraph implements Graph<MyService> {
+        private final Collection<MyService> allNodes;
+
+        CustomGraph(Collection<MyService> allNodes) {
+            this.allNodes = allNodes;
+        }
+
         @Override
-        public Collection<MyService> getEdges(MyService node, Collection<MyService> allNodes) {
+        public Set<MyService> getEdges(MyService node) {
             return getMyServiceEdges(node, allNodes);
+        }
+
+        @Override
+        public Iterator<MyService> iterator() {
+            return allNodes.iterator();
         }
     }
 
-    private List<MyService> getMyServiceEdges(MyService node, Collection<MyService> allNodes) {
+    private Set<MyService> getMyServiceEdges(MyService node, Collection<MyService> allNodes) {
         Class<? extends MyService> nodeClass = node.getClass();
 
-        List<MyService> edges = allNodes.stream()
+        Set<MyService> edges = allNodes.stream()
                 .filter(other -> {
                     Class<? extends MyService> otherClass = other.getClass();
                     Before before = otherClass.getAnnotation(Before.class);
@@ -214,14 +193,14 @@ public class TopologicalSorterTest {
                     }
 
                     return false;
-                }).collect(toList());
+                }).collect(toSet());
 
         After after = nodeClass.getAnnotation(After.class);
         if (after != null) {
             List<Class<?>> classesAfter = asList(after.value());
             edges.addAll(allNodes.stream()
                     .filter(other -> classesAfter.contains(other.getClass()))
-                    .collect(toList()));
+                    .collect(toSet()));
         }
         return edges;
     }
