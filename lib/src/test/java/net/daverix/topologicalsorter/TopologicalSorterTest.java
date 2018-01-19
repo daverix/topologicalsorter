@@ -23,7 +23,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -42,6 +46,32 @@ public class TopologicalSorterTest {
         List<MyService> unsorted = new ArrayList<>(asList(a, b, c, d, e));
 
         List<MyService> sorted = TopologicalSorter.sort(unsorted, new MySorter());
+
+        Truth.assertThat(sorted)
+                .named("should have all nodes in list after sort")
+                .containsExactly(a, b, c, d, e);
+
+        assertThat(sorted).hasItem(b).placedAfter(a);
+        assertThat(sorted).hasItem(c).placedBefore(a);
+        assertThat(sorted).hasItem(e).placedAfter(c);
+        assertThat(sorted).hasItem(e).placedBefore(a);
+    }
+
+    @Test
+    public void sortSimpleGraphUsingMap() {
+        A a = new A();
+        B b = new B();
+        C c = new C();
+        D d = new D();
+        E e = new E();
+
+        List<MyService> unsorted = new ArrayList<>(asList(a, b, c, d, e));
+
+        Map<MyService, Set<MyService>> edges = new HashMap<>();
+        for(MyService node : unsorted) {
+            edges.put(node, new HashSet<>(getMyServiceEdges(node, unsorted)));
+        }
+        List<MyService> sorted = TopologicalSorter.sort(unsorted, edges);
 
         Truth.assertThat(sorted)
                 .named("should have all nodes in list after sort")
@@ -142,29 +172,32 @@ public class TopologicalSorterTest {
     class MySorter implements TopologicalSorter.EdgesFactory<MyService> {
         @Override
         public Collection<MyService> getEdges(MyService node, Collection<MyService> allNodes) {
-            Class<? extends MyService> nodeClass = node.getClass();
-
-            List<MyService> edges = allNodes.stream()
-                    .filter(other -> {
-                        Class<? extends MyService> otherClass = other.getClass();
-                        Before before = otherClass.getAnnotation(Before.class);
-                        if (before != null) {
-                            List<Class<?>> classesBefore = asList(before.value());
-                            return classesBefore.contains(nodeClass);
-                        }
-
-                        return false;
-                    }).collect(toList());
-
-            After after = nodeClass.getAnnotation(After.class);
-            if (after != null) {
-                List<Class<?>> classesAfter = asList(after.value());
-                edges.addAll(allNodes.stream()
-                        .filter(other -> classesAfter.contains(other.getClass()))
-                        .collect(toList()));
-            }
-
-            return edges;
+            return getMyServiceEdges(node, allNodes);
         }
+    }
+
+    private List<MyService> getMyServiceEdges(MyService node, Collection<MyService> allNodes) {
+        Class<? extends MyService> nodeClass = node.getClass();
+
+        List<MyService> edges = allNodes.stream()
+                .filter(other -> {
+                    Class<? extends MyService> otherClass = other.getClass();
+                    Before before = otherClass.getAnnotation(Before.class);
+                    if (before != null) {
+                        List<Class<?>> classesBefore = asList(before.value());
+                        return classesBefore.contains(nodeClass);
+                    }
+
+                    return false;
+                }).collect(toList());
+
+        After after = nodeClass.getAnnotation(After.class);
+        if (after != null) {
+            List<Class<?>> classesAfter = asList(after.value());
+            edges.addAll(allNodes.stream()
+                    .filter(other -> classesAfter.contains(other.getClass()))
+                    .collect(toList()));
+        }
+        return edges;
     }
 }

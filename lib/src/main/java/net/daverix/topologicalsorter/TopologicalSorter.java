@@ -19,7 +19,10 @@ package net.daverix.topologicalsorter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableCollection;
 
 /**
@@ -28,7 +31,7 @@ import static java.util.Collections.unmodifiableCollection;
  */
 public final class TopologicalSorter {
     /**
-     * Returns a sorted list of nodes from an acyclic directed graph by using an edges factory to
+     * Returns a sorted list of nodes from a directed acyclic graph by using an edges factory to
      * get the edges for each node.
      *
      * @param nodes the list of nodes to sort.
@@ -46,6 +49,25 @@ public final class TopologicalSorter {
 
         Sorter<T> sorter = new Sorter<>(nodes, edgesFactory);
         return sorter.sort();
+    }
+
+    /**
+     * Returns a sorted list of nodes from a directed acyclic graph by using a map of an edges
+     *
+     * @param nodes the list of nodes to sort.
+     * @param edges the edges for each node in the list of nodes
+     * @param <T> the type of the node
+     *
+     * @return a sorted list of nodes
+     */
+    public static <T> List<T> sort(Collection<T> nodes, Map<T, Set<T>> edges) {
+        if(nodes == null)
+            throw new IllegalArgumentException("nodes is null");
+
+        if(edges == null)
+            throw new IllegalArgumentException("edges is null");
+
+        return sort(nodes, (node, allNodes) -> edges.getOrDefault(node, emptySet()));
     }
 
     private static class Sorter<T> {
