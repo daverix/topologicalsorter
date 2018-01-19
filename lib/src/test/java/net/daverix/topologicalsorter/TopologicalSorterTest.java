@@ -43,7 +43,7 @@ public class TopologicalSorterTest {
         D d = new D();
         E e = new E();
 
-        List<MyService> unsorted = new ArrayList<>(asList(a, b, c, d, e));
+        List<MyService> unsorted = asList(a, b, c, d, e);
 
         List<MyService> sorted = TopologicalSorter.sort(unsorted, new MySorter());
 
@@ -65,13 +65,38 @@ public class TopologicalSorterTest {
         D d = new D();
         E e = new E();
 
-        List<MyService> unsorted = new ArrayList<>(asList(a, b, c, d, e));
+        List<MyService> unsorted = asList(a, b, c, d, e);
 
         Map<MyService, Set<MyService>> edges = new HashMap<>();
         for(MyService node : unsorted) {
             edges.put(node, new HashSet<>(getMyServiceEdges(node, unsorted)));
         }
         List<MyService> sorted = TopologicalSorter.sort(unsorted, edges);
+
+        Truth.assertThat(sorted)
+                .named("should have all nodes in list after sort")
+                .containsExactly(a, b, c, d, e);
+
+        assertThat(sorted).hasItem(b).placedAfter(a);
+        assertThat(sorted).hasItem(c).placedBefore(a);
+        assertThat(sorted).hasItem(e).placedAfter(c);
+        assertThat(sorted).hasItem(e).placedBefore(a);
+    }
+
+    @Test
+    public void sortSimpleGraphUsingOnlyMap() {
+        A a = new A();
+        B b = new B();
+        C c = new C();
+        D d = new D();
+        E e = new E();
+
+        List<MyService> unsorted = asList(a, b, c, d, e);
+        Map<MyService, Set<MyService>> nodes = new HashMap<>();
+        for(MyService node : unsorted) {
+            nodes.put(node, new HashSet<>(getMyServiceEdges(node, unsorted)));
+        }
+        List<MyService> sorted = TopologicalSorter.sort(nodes);
 
         Truth.assertThat(sorted)
                 .named("should have all nodes in list after sort")
