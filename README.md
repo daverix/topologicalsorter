@@ -37,7 +37,7 @@ fun main() {
     
     val sorted = graph.sort()
     
-    println(sorted) // prints [b, a, c]
+    println(sorted) // prints [B, A, C]
 }
 ```
 
@@ -63,7 +63,7 @@ class Example {
         
         List<String> sorted = TopologicalSorter.sort(graph);
         
-        System.out.println(sorted); // prints [b, c, a]
+        System.out.println(sorted); // prints [B, A, C]
     }
 }
 ```
