@@ -7,7 +7,6 @@ graphs found on [Wikipedia](https://en.wikipedia.org/wiki/Topological_sorting#De
         select an unmarked node n
         visit(n)
         
-        
     function visit(node n)
         if n has a permanent mark then return
         if n has a temporary mark then stop (not a DAG)
@@ -18,71 +17,67 @@ graphs found on [Wikipedia](https://en.wikipedia.org/wiki/Topological_sorting#De
         add n to head of L
 
 ## Usage
+Let's say we have a graph where a depends on b and c depends on both a and b.
 
-```java
-MyNode myFirstNode = ...
-MyNode mySecondNode = ...
-MyNode myThirdNode = ...
+Kotlin:
 
-MutableGraph<MyNode> graph = new DirectedGraph<>();
+```kotlin
+import net.daverix.topologicalsorter.graphOf
+import net.daverix.topologicalsorter.sort
 
-// add node without edges
-graph.add(myFirstNode);
-
-// add node with an edge to the first node
-graph.add(mySecondNode, myFirstNode);
-
-// add node with edges to first and second node
-graph.add(myThirdNode, myFirstNode, mySecondNode);
-
-List<MyNode> sorted = TopologicalSorter.sort(graph);
+fun main() {
+    val a = "A"
+    val b = "B"
+    val c = "C"
+    
+    val graph = graphOf(
+        a to setOf(b),      // a depends on b
+        c to setOf(a, b)    // c depends on a and b 
+    )
+    
+    val sorted = graph.sort()
+    
+    println(sorted) // prints [b, a, c]
+}
 ```
 
-You can also make a lazy implementation by creating an implementation of Graph instead:
+Java:
 
 ```java
-public class MyCustomGraph<MyNode> implements Graph<MyNode> {
-    private final Collection<MyNode> nodes;
-
-    public MyCustomGraph(Collection<MyNode> nodes) {
-        this.nodes = nodes;
-    }
-
-    @Override
-    public Set<MyNode> getEdges(MyNode currentNode) {
-        List<MyNode> edges = new ArrayList<>();
+class Example {
+    public static void main(String[] args) {
+        String a = "A";
+        String b = "B";
+        String c = "C";
         
-        // filter out the nodes connecting currentNode by going through the injected 
-        // allNodes collection. For example, you could look at annotations. (see the unit 
-        // tests for an example)
+        Map<String, Set<String>> graph = new HashMap<String, Set<String>>();
         
-        return edges;
-    }
-
-    @Override
-    public Iterator<MyService> iterator() {
-        return allNodes.iterator();
+        Set<String> dependenciesOfA = new HashSet<String>();
+        dependenciesOfA.add(b);
+        graph.put(a, dependenciesOfA);
+        
+        Set<String> dependenciesOfC = new HashSet<String>();
+        dependenciesOfC.add(a);
+        dependenciesOfC.add(b);
+        graph.put(c, dependenciesOfC);
+        
+        List<String> sorted = TopologicalSorter.sort(graph);
+        
+        System.out.println(sorted); // prints [b, c, a]
     }
 }
 ```
 
-And then use the class like this:
-
-```java
-List<MyNode> unsorted = asList(myFirstNode, mySecondNode, myThirdNode);
-List<MyNode> sorted = TopologicalSorter.sort(graph, new MyCustomGraph(nodes));
-```
-
 ## License
 
-    Copyright 2018 David Laurell
-    
+    Copyright 2020 David Laurell
+        
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
     You may obtain a copy of the License at
-    
+        
     http://www.apache.org/licenses/LICENSE-2.0
-    
+        
     Unless required by applicable law or agreed to in writing, software
     distributed under the License is distributed on an "AS IS" BASIS,
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
