@@ -1,4 +1,3 @@
-@file:JvmName("TopologicalSorter")
 /*
    Copyright 2020 David Laurell
 
@@ -14,20 +13,21 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
+@file:JvmName("TopologicalSorter")
 package net.daverix.topologicalsorter
 
 typealias Graph<T> = Map<T, Set<T>>
 
 /**
- * Creates a map where
+ * Creates a map representing a graph
  * @param pairs variable number of nodes and their edges where [Pair.first] is the node and [Pair.second] are the
  * edges of that node
  */
 fun <T> graphOf(vararg pairs: Pair<T, Set<T>>): Graph<T> = mapOf(*pairs)
 
 /**
- * This method sorts nodes in an acyclic directed graph using a depth first algorithm which can
- * be found at [Wikipedia](https://en.wikipedia.org/wiki/Topological_sorting)
+ * Sorts nodes in an acyclic directed graph using a depth first algorithm which can be found at
+ * [Wikipedia](https://en.wikipedia.org/wiki/Topological_sorting)
  *
  * @return a sorted list of nodes
  */
