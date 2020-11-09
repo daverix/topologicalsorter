@@ -13,7 +13,7 @@ repositories {
 }
 
 group = "net.daverix.topologicalsorter"
-version = "0.2"
+version = "0.2.1"
 
 dependencies {
     api(kotlin("stdlib-jdk8"))
@@ -69,5 +69,20 @@ bintray {
             desc = "Topological sorter based on a depth first search algorithm"
             vcsTag = "v${project.version}"
         }
+    }
+}
+
+tasks.withType<com.jfrog.bintray.gradle.tasks.BintrayUploadTask> {
+    doFirst {
+        publishing.publications
+                .filterIsInstance<MavenPublication>()
+                .forEach { publication ->
+                    val moduleFile = buildDir.resolve("publications/${publication.name}/module.json")
+                    if (moduleFile.exists()) {
+                        publication.artifact(object : org.gradle.api.publish.maven.internal.artifact.FileBasedMavenArtifact(moduleFile) {
+                            override fun getDefaultExtension() = "module"
+                        })
+                    }
+                }
     }
 }
