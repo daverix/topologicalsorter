@@ -5,7 +5,7 @@ plugins {
     kotlin("jvm") version "1.4.10"
     `java-library`
     `maven-publish`
-    id("com.jfrog.bintray") version "1.7.3"
+    id("com.jfrog.bintray") version "1.8.5"
 }
 
 repositories {
@@ -34,10 +34,8 @@ val sourcesJar by tasks.registering(Jar::class) {
     archiveClassifier.set("sources")
 }
 
-val javadocJar by tasks.registering(Jar::class) {
-    dependsOn("javadoc")
-    from(tasks.named<Javadoc>("javadoc").get().destinationDir)
-    archiveClassifier.set("javadoc")
+artifacts {
+    archives(sourcesJar)
 }
 
 publishing {
@@ -46,8 +44,7 @@ publishing {
             from(components["java"])
             artifactId = "topologicalsorter"
 
-            artifact(sourcesJar.get())
-            artifact(javadocJar.get())
+            artifact(sourcesJar)
 
             pom {
                 description.set("A node sorting library using depth first search")
